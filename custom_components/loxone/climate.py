@@ -135,9 +135,15 @@ class LoxoneRoomControllerV2(LoxoneEntity, ClimateEntity, ABC):
         )
 
     def get_mode_from_id(self, mode_id):
+        presetDefault = "NONE"
         for mode in self._modeList:
             if mode["id"] == mode_id:
-                return mode["name"]
+                match mode["name"]:
+                    case "Komfort-Temperatur":
+                        presetDefault = "COMFORT"
+                    case "Eco-Temperatur":
+                        presetDefault = "ECO"
+                return presetDefault
 
     @property
     def device_class(self):
