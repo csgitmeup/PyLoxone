@@ -17,7 +17,7 @@ from homeassistant.const import (CONF_HOST, CONF_PASSWORD, CONF_PORT,
                                  CONF_USERNAME, EVENT_COMPONENT_LOADED,
                                  EVENT_HOMEASSISTANT_START,
                                  EVENT_HOMEASSISTANT_STOP)
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import config_validation as cv
@@ -28,7 +28,7 @@ from homeassistant.helpers.entity import Entity
 
 from .api import LoxApp, LoxWs
 from .const import (AES_KEY_SIZE, ATTR_AREA_CREATE, ATTR_CODE, ATTR_COMMAND,
-                    ATTR_UUID, ATTR_VALUE, CMD_AUTH_WITH_TOKEN,
+                    ATTR_DEVICE, ATTR_UUID, ATTR_VALUE, CMD_AUTH_WITH_TOKEN,
                     CMD_ENABLE_UPDATES, CMD_ENCRYPT_CMD, CMD_GET_KEY,
                     CMD_GET_KEY_AND_SALT, CMD_GET_PUBLIC_KEY,
                     CMD_GET_VISUAL_PASSWD, CMD_KEY_EXCHANGE, CMD_REFRESH_TOKEN,
@@ -160,7 +160,10 @@ async def create_group_for_loxone_enties(hass, entites, name, object_id):
         )
         _LOGGER.error("Can't create group '%s' with error: %s", name, err)
     except Exception as err:
-        _LOGGER.error("Can't create group '%s' with error: %s", name, err)
+        _LOGGER.info(
+            "Can't create group '%s'. Try to make at least one group manually. (https://www.home-assistant.io/integrations/group/)",
+            name,
+        )
 
 
 async def async_setup_entry(hass, config_entry):
@@ -214,8 +217,14 @@ async def async_setup_entry(hass, config_entry):
     async def handle_websocket_command(call):
         """Handle websocket command services."""
         value = call.data.get(ATTR_VALUE, DEFAULT)
-        device_uuid = call.data.get(ATTR_UUID, DEFAULT)
-        await miniserver.api.send_websocket_command(device_uuid, value)
+        if call.data.get(ATTR_DEVICE) is None:
+            entity_uuid = call.data.get(ATTR_UUID, DEFAULT)
+        else:
+            entity_registry = er.async_get(hass)
+            entity_id = call.data.get(ATTR_DEVICE)
+            entity = entity_registry.async_get(entity_id)
+            entity_uuid = entity.unique_id
+        await miniserver.api.send_websocket_command(entity_uuid, value)
 
     async def sync_areas_with_loxone(data={}):
         create_areas = data.get(ATTR_AREA_CREATE, DEFAULT)
@@ -258,6 +267,7 @@ async def async_setup_entry(hass, config_entry):
                     climates = []
                     fans = []
                     accontrols = []
+                    numbers = []
 
                     for s in entity_ids:
                         s_dict = s.as_dict()
@@ -282,6 +292,8 @@ async def async_setup_entry(hass, config_entry):
                                 fans.append(s_dict["entity_id"])
                             elif device_typ == "AcControl":
                                 accontrols.append(s_dict["entity_id"])
+                            elif device_typ == "Slider":
+                                numbers.append(s_dict["entity_id"])
 
                     sensors_analog.sort()
                     sensors_digital.sort()
@@ -292,6 +304,7 @@ async def async_setup_entry(hass, config_entry):
                     dimmers.sort()
                     fans.sort()
                     accontrols.sort()
+                    numbers.sort()
 
                     await create_group_for_loxone_enties(
                         hass, sensors_analog, "Loxone Analog Sensors", "loxone_analog"
@@ -329,6 +342,9 @@ async def async_setup_entry(hass, config_entry):
                         "Loxone AC Controllers",
                         "loxone_accontrollers",
                     )
+                    await create_group_for_loxone_enties(
+                        hass, numbers, "Loxone Numbers", "loxone_numbers"
+                    )
                     await hass.async_block_till_done()
                     await create_group_for_loxone_enties(
                         hass,
@@ -339,6 +355,7 @@ async def async_setup_entry(hass, config_entry):
                             "group.loxone_covers",
                             "group.loxone_lights",
                             "group.loxone_ventilations",
+                            "group.loxone_numbers",
                         ],
                         "Loxone Group",
                         "loxone_group",
