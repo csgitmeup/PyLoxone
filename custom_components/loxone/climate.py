@@ -218,7 +218,7 @@ class LoxoneRoomControllerV2(LoxoneEntity, ClimateEntity, ABC):
             new_offset = kwargs["temperature"] - self.get_state_value(
                 "comfortTemperature"
             )
-            self.hass.bus.async_fire(
+            self.hass.bus.fire(
                 SENDDOMAIN,
                 dict(uuid=self.uuidAction, value=f"setComfortModeTemp/{new_offset}"),
             )
