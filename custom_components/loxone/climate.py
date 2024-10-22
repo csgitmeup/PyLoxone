@@ -10,7 +10,8 @@ from abc import ABC
 
 from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
 from homeassistant.components.climate.const import (ClimateEntityFeature,
-                                                    HVACAction, HVACMode)
+                                                    HVACAction, HVACMode,
+                                                    PRESET_ECO, PRESET_COMFORT,)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
@@ -114,6 +115,13 @@ class LoxoneRoomControllerV2(LoxoneEntity, ClimateEntity, ABC):
         self.type = "RoomControllerV2"
         self._modeList = kwargs["details"]["timerModes"]
 
+        #map to HA Defaults
+        for mode in self._modeList:
+            if mode["name"] == "Komfort-Temperatur":
+                mode["name"] = PRESET_COMFORT
+            elif mode["name"] == "Eco-Temperatur":
+                mode["name"] = PRESET_ECO
+      
         self._attr_device_info = get_or_create_device(
             self.unique_id, self.name, self.type, self.room
         )
