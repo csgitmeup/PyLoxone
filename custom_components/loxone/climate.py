@@ -11,7 +11,7 @@ from abc import ABC
 from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
 from homeassistant.components.climate.const import (ClimateEntityFeature,
                                                     HVACAction, HVACMode,
-                                                    PRESET_ECO, PRESET_COMFORT,)
+                                                    PRESET_ECO, PRESET_COMFORT)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
