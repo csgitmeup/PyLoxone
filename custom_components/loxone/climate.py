@@ -116,11 +116,11 @@ class LoxoneRoomControllerV2(LoxoneEntity, ClimateEntity, ABC):
         self._modeList = kwargs["details"]["timerModes"]
 
         #map to HA Defaults
-        for mode in self._modeList:
-            if mode["name"] == "Komfort-Temperatur":
-                mode["name"] = PRESET_COMFORT
-            elif mode["name"] == "Eco-Temperatur":
-                mode["name"] = PRESET_ECO
+        #for mode in self._modeList:
+        #    if mode["name"] == "Komfort-Temperatur":
+        #        mode["name"] = PRESET_COMFORT
+        #    elif mode["name"] == "Eco-Temperatur":
+        #        mode["name"] = PRESET_ECO
       
         self._attr_device_info = get_or_create_device(
             self.unique_id, self.name, self.type, self.room
